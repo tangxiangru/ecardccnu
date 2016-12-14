@@ -6,11 +6,17 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -26,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
     public static final int SHOW_RESPONSE = 0;
@@ -39,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private List<Ecard> usersList  = new ArrayList<Ecard>();
 
     private SimpleAdapter simpleAdapter;
+    private ListAdapter listAdapter;
 
     private Handler handler = new Handler(){
 
@@ -46,10 +54,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             switch (msg.what){
                 case SHOW_RESPONSE :
 
-                    //在这里更新ui
                     String response = (String) msg.obj;
                     parseJSONWithJSONObject(response);
                     setUsersList(usersList);
+
+
+
+
+                    listAdapter = new BaseAdapter() {
+                        @Override
+                        public int getCount() {
+                            return usersList.size();
+                        }
+
+                        @Override
+                        public Object getItem(int i) {
+                            return null;
+                        }
+
+                        @Override
+                        public long getItemId(int i) {
+                            return i;
+                        }
+
+                        @Override
+                        public View getView(int i, View view, ViewGroup viewGroup) {
+                            view = LayoutInflater.from(MainActivity.this).inflate(R.layout.list_item,null);
+                            ((TextView)view.findViewById(R.id.dealDateName)).setText(usersList.get(i).getDealDateTime());
+                            ((TextView)view.findViewById(R.id.orgName)).setText(usersList.get(i).getOrgName());
+                            ((TextView)view.findViewById(R.id.outName)).setText(usersList.get(i).getOutMoney());
+                            ((TextView)view.findViewById(R.id.transMoney)).setText(usersList.get(i).getTransMoney());
+                            Log.d("dealDateTime",usersList.get(i).getDealDateTime());
+                            Log.d("orgName",usersList.get(i).getDealDateTime());
+                            Log.d("outMoney",usersList.get(i).getDealDateTime());
+                            Log.d("transMoney",usersList.get(i).getDealDateTime());
+                            return view;
+                        }
+                    };
 
             }
         }
@@ -88,17 +129,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void run() {
                 HttpURLConnection connection = null;
                 try{
-                    URL url = new URL("http://console.ccnu.edu.cn/ecard/getTrans?userId= &days=90&startNum=0&num=200" +search.getText().toString() );
+                    URL url = new URL("http://console.ccnu.edu.cn/ecard/getTrans?&days=90&startNum=0&num=20&userId=" +search.getText().toString() );
                     connection = (HttpURLConnection)url.openConnection();
                     connection.setRequestMethod("GET");
                     connection.setConnectTimeout(8000);
                     connection.setReadTimeout(8000);
                     InputStream in = connection.getInputStream();
-                    BufferedReader reader  = new BufferedReader(new InputStreamReader(in));
+//                    BufferedReader reader  = new BufferedReader(new InputStreamReader(in));
+
+
+                    InputStreamReader reader = new InputStreamReader(in);
+                    BufferedReader bufferedReader = new BufferedReader(reader);
                     StringBuilder response = new StringBuilder();
                     String line;
-                    while((line = reader.readLine())!= null){
-                        //把内容写入response中
+                    while((line = bufferedReader.readLine())!= null){
+
                         response.append(line);
                     }
                     Message message = new Message();
@@ -118,7 +163,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     public void parseJSONWithJSONObject(String jsonData) {
         try {
-            JSONObject object = new JSONObject(jsonData);
+            JSONObject object= new JSONObject(jsonData);
             JSONArray jsonArr = object.getJSONArray("Ecard");
             usersList = new ArrayList<>();
             for (int i = 0; i < jsonArr.length(); i++) {
